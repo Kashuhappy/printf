@@ -1,152 +1,78 @@
-#include <stdarg.h>
 #include "holberton.h"
-#include <stdio.h>
+#include <stdlib.h>
 /**
-* _printf - print variable length of arguments with certain format
-* @format: print format
-* @...: variable length of printable arguments
+* check_for_specifiers - checks if there is a valid format specifier
+* @format: possible format specifier
 *
-* Return: number of printed characters
+* Return: pointer to valid function or NULL
+*/
+static int (*check_for_specifiers(const char *format))(va_list)
+{
+unsigned int i;
+print_t p[] = {
+{"c", print_c},
+{"s", print_s},
+{"i", print_i},
+{"d", print_d},
+{"u", print_u},
+{"b", print_b},
+{"o", print_o},
+{"x", print_x},
+{"X", print_X},
+{"p", print_p},
+{"S", print_S},
+{"r", print_r},
+{"R", print_R},
+{NULL, NULL}
+};
+for (i = 0; p[i].t != NULL; i++)
+{
+if (*(p[i].t) == *format)
+{
+break;
+}
+}
+return (p[i].f);
+}
+/**
+* _printf - prints anything
+* @format: list of argument types passed to the function
+*
+* Return: number of characters printed
 */
 int _printf(const char *format, ...)
 {
-int count = 0, i = 0, isSpecial = 0, temp;
-va_list printargs;
-char pChar, tempChar;
-va_start(printargs, format);
-while (format[i] != '\0')
-{
-tempChar = format[i];
-if (!isSpecial && tempChar == '\\')
-{
-isSpecial = 1;
-continue;
-}
-if (isSpecial)
-{
-pChar = tempChar == '\\' ? '\\' : tempChar == 'n' ? '\n' :
-tempChar == 't' ? '\t' : 0;
-if (pChar == 0)
-{
-_putchar('\\');
-_putchar(tempChar);
-}
-else
-{
-_putchar(pChar);
-}
-isSpecial = 0;
-}
-if (tempChar == '%')
-{
-temp = resolve_format(format[i + 1], printargs);
-if (temp <= 0)
+unsigned int i = 0, count = 0;
+va_list valist;
+int (*f)(va_list);
+if (format == NULL)
 return (-1);
-count += temp;
-i += 2;
-}
-else
+va_start(valist, format);
+while (format[i])
 {
-_putchar(tempChar);
-i++;
+for (; format[i] != '%' && format[i]; i++)
+{
+_putchar(format[i]);
 count++;
 }
-}
+if (!format[i])
 return (count);
-}
-/**
-* resolve_format - check format and print values
-* @c: character to check
-* @printargs: variable arguments to print
-*
-* Return: number of printed characters
-*/
-int resolve_format(char c, va_list printargs)
+f = check_for_specifiers(&format[i + 1]);
+if (f != NULL)
 {
-int i = 0;
-if (c == '%')
-{
-_putchar(c);
-i++;
-}
-else if (c == 'c')
-{
-_putchar(va_arg(printargs, int));
-i++;
-}
-else if (c == 's')
-{
-i = print_string(va_arg(printargs, char *));
-}
-else if (c == 'd' || c == 'i')
-{
-i = print_number(va_arg(printargs, int), 0);
-}
-else if (c == 'u')
-{
-i = print_unsigned_number(va_arg(printargs, unsigned int), 0);
-}
-else
-{
-_putchar('%');
-_putchar(c);
+count += f(valist);
 i += 2;
+continue;
 }
-return (i);
-}
-/**
-* print_string - print string characters
-* @s: character pointer to print
-*
-* Return: number of printed characters
-*/
-int print_string(char *s)
-{
-int i = 0;
-while (s[i] != '\0')
-{
-_putchar(s[i]);
+if (!format[i + 1])
+return (-1);
+_putchar(format[i]);
+count++;
+if (format[i + 1] == '%')
+i += 2;
+else
 i++;
 }
-return (i);
-}
-/**
-* print_number - print numbers
-* @d: number to print
-* @i: chrrent printed count
-*
-* Return: number of printed number characters
-*/
-int print_number(int d, int i)
-{
-if (d < 0)
-{
-_putchar('-');
-d = d * -1;
-i++;
-}
-if (d > 0)
-{
-i++;
-print_number(d / 10, i);
-_putchar('0' + d % 10);
-}
-return (i);
-}
-/**
-* print_unsigned_number - prints unsigned numbers
-* @d: number to print
-* @i: current printed count
-*
-* Return: printed count
-*/
-int print_unsigned_number(unsigned int d, int i)
-{
-if (d > 0)
-{
-i++;
-print_number(d / 10, i);
-_putchar('0' + d % 10);
-}
-return (i);
+va_end(valist);
+return (count);
 }
